@@ -1,12 +1,8 @@
 package info.jiekebo;
 
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import scala.Tuple2;
-
-import java.util.Arrays;
 
 public class BikeData {
     public static void main(String[] args) {
@@ -18,13 +14,16 @@ public class BikeData {
         SparkConf conf = new SparkConf().setAppName("info.jiekebo.BikeData").setMaster("local");
         JavaSparkContext context = new JavaSparkContext(conf);
 
-        JavaRDD<String> file = context.textFile(args[0]);
-        JavaRDD<String[]> map = file.map((line) -> line.split(","));
-        /*JavaRDD<String> words = file.flatMap(s -> Arrays.asList(s.split(" ")));
-        JavaPairRDD<String, Integer> pairs = words.mapToPair(s -> new Tuple2<>(s, 1));
-        JavaPairRDD<String, Integer> counter = pairs.reduceByKey((a, b) -> a + b);*/
+        JavaRDD<String[]> pipe = context
+                .textFile(args[0])
+                .filter((line) -> !line.startsWith("Trip"))
+                .map((line) -> line.split(","));
+        long count = pipe.count();
 
-        //counter.saveAsTextFile(args[1]);
-        System.out.println("plop...");
+        Integer total = pipe
+                .map((data) -> Integer.parseInt(data[1]))
+                .reduce((a, b) -> a + b);
+
+        System.out.println("Average total time " + total / count / 60 + " minutes");
     }
 }
