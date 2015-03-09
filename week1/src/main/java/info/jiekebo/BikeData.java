@@ -1,7 +1,6 @@
 package info.jiekebo;
 
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.joda.time.DateTime;
@@ -10,10 +9,7 @@ import scala.Tuple2;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Locale;
+import java.util.*;
 
 public class BikeData {
     public static void main(String[] args) {
@@ -22,6 +18,9 @@ public class BikeData {
             System.exit(0);
         }
 
+        /**
+         * Problem 1
+         */
         SparkConf conf = new SparkConf().setAppName("info.jiekebo.BikeData").setMaster("local");
         conf.set("spark.hadoop.validateOutputSpecs", "false");
         JavaSparkContext context = new JavaSparkContext(conf);
@@ -38,8 +37,12 @@ public class BikeData {
 
         System.out.println("Average total time " + total / count / 60 + " minutes");
 
+        /**
+         * Problem 2
+         */
         DateFormat df = new SimpleDateFormat("MM/dd/yy", Locale.ENGLISH);
-        JavaPairRDD<Date, Integer> dayFrequency = pipe
+
+        List<Tuple2<Date, Integer>> collect = pipe
                 .mapToPair((data) ->
                                 new Tuple2<>(
                                         df.parse(data[2]),
@@ -64,9 +67,15 @@ public class BikeData {
                 .mapToPair((date) ->
                                 new Tuple2<>(date, 1)
                 )
-                .reduceByKey((a, b) -> a + b);
+                .reduceByKey((a, b) -> a + b)
+                .collect();
 
-        dayFrequency.saveAsTextFile(args[1]);
+        Collections.sort(collect, (a,b) -> b._2().compareTo(a._2()));
 
+        System.out.println("Most popular day by frequency of " + collect.get(0)._2() + " was " + collect.get(0)._1());
+
+        /**
+         * Problem 3
+         */
     }
 }
